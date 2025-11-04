@@ -1,5 +1,6 @@
 package com.example.springboot_exercises.hello_spring;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -88,5 +89,18 @@ public class PathController {
             }
         }
         return ResponseEntity.status(404).body("Objektet finns inte");  // 404 - visar text
+    }
+
+    //Uppgift 2.2 – Konfigurationsfiler och profiler
+    // 1. Skapa följande filer i src/main/resources/:
+    // application.properties ○ application-dev.properties ○ application-prod.properties
+    // 2. I varje fil, lägg till olika värden:
+    // 3. Aktivera spring.profiles.active=dev i application.properties.
+    // 4. Skapa en endpoint /info som visar:
+    // 5. Ändra profil till prod och visa att texten och porten ändras.
+    // 💡 Bonus: Använd @Value("${app.name}") i din controller.
+    @GetMapping("/info")
+    public String info(@Value("${app.welcome-message}") String welcome, @Value("${app.name}") String name, @Value("${spring_profiles_active}") String active_env, @Value("${server.port}") String port){
+        return welcome + " The app name is: " + name + ". The active profile is: " + active_env + " Port used is: " + port;
     }
 }
