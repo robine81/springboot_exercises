@@ -1,14 +1,12 @@
-package com.example.springboot_exercises.hello_spring;
+package com.example.springboot_exercises.model;
 
-public class Message {
+public class Greeting {
     private String message;
     private int id;
 
-    public Message() {}
-
-    public Message(String message, int id) {
-        this.message = message;
-        this.id = id;
+    public Greeting(String name) {
+        this.message = name;
+        this.id = -1;
     }
 
     public String getMessage() {
@@ -21,10 +19,6 @@ public class Message {
 
     public int getId() {
         return id;
-    }
-
-    public String sayHello(){
-        return "Hello world";
     }
 
     public void setId(int id) {

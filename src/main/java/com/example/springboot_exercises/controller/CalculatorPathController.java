@@ -1,5 +1,8 @@
-package com.example.springboot_exercises.hello_spring;
+package com.example.springboot_exercises.controller;
 
+import com.example.springboot_exercises.model.Greeting;
+import com.example.springboot_exercises.service.GreetingService;
+import com.example.springboot_exercises.service.Service;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -7,10 +10,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 
 @RestController
-public class PathController {
+public class CalculatorPathController {
 
-    CalculatorService service = new CalculatorService();
     GreetingService greetingService = new GreetingService();
+    Service service = new Service();
 
     // Uppgift 1 – PathVariable
     // Skapa en endpoint som tar emot ett namn via URL:en.
@@ -32,7 +35,7 @@ public class PathController {
 
     @GetMapping("/multiply/{input1}/{input2}")
     public int calculate(@PathVariable int input1, @PathVariable int input2){
-        return service.multiply(input1, input2);
+        return input1 * input2;
     }
 
     //Uppgift 3 – POST med JSON
@@ -47,7 +50,7 @@ public class PathController {
     //to get only variable message with record
     @PostMapping("/messageString")
     public String messageString(@RequestBody Greeting greeting) {
-        return greeting.message();
+        return greeting.getMessage();
     }
 
     // Uppgift 4 – Lista i minnet
@@ -73,7 +76,7 @@ public class PathController {
     @GetMapping("/findGreetingById/{id}")
     public Greeting findGreetingById(@PathVariable int id){
         for (Greeting g : greetingService.getGreetings()){
-            if (g.id() == id){
+            if (g.getId() == id){
                 return g;
             }
         }
@@ -84,7 +87,7 @@ public class PathController {
     @GetMapping("/findGreetingByIdResponseEntity/{id}")
     public ResponseEntity<?> findGreetingByIdResponseEntity(@PathVariable int id){
         for (Greeting g : greetingService.getGreetings()){
-            if (g.id() == id){
+            if (g.getId() == id){
                 return ResponseEntity.ok(g);  // 200 OK - returnerar Greeting som JSON
             }
         }
@@ -103,4 +106,5 @@ public class PathController {
     public String info(@Value("${app.welcome-message}") String welcome, @Value("${app.name}") String name, @Value("${spring_profiles_active}") String active_env, @Value("${server.port}") String port){
         return welcome + " The app name is: " + name + ". The active profile is: " + active_env + " Port used is: " + port;
     }
+
 }

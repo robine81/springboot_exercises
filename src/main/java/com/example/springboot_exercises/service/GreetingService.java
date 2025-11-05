@@ -1,4 +1,6 @@
-package com.example.springboot_exercises.hello_spring;
+package com.example.springboot_exercises.service;
+
+import com.example.springboot_exercises.model.Greeting;
 
 import java.util.ArrayList;
 
