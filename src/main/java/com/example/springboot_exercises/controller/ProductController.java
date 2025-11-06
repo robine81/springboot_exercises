@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -48,7 +49,7 @@ public class ProductController {
     // Returnera det skapade objektet med statuskod 201.
     @PostMapping
     public ResponseEntity<Product> addProduct(@Valid @RequestBody ProductCreateDto productDto){
-        Product result = new Product(-1, productDto.name(), productDto.price(), productDto.status());
+        Product result = new Product(-1, productDto.name(), productDto.price(), productDto.status(), productDto.category());
         result = service.addProduct(result);
         //validation not working
         return ResponseEntity.status(201).body(result);
@@ -62,9 +63,9 @@ public class ProductController {
     // Hantera fall där id inte finns (404).
     //http://localhost:8081/products/3?name=Huawei&price=170.0
     @PutMapping("/{id}")
-    public ResponseEntity<Product> updateProduct(@PathVariable int id, @RequestParam String name, @RequestParam double price, @RequestParam String status){
+    public ResponseEntity<Product> updateProduct(@PathVariable int id, @RequestParam String name, @RequestParam double price, @RequestParam String status, @RequestParam String category){
         //id -1 will be overwritten in service.updateProduct with findById(id), -1 is just a placeholder to create object
-        Product result = service.updateProduct(id, new Product (-1, name, price, status));
+        Product result = service.updateProduct(id, new Product (-1, name, price, status, category));
         if(result != null){
             return ResponseEntity.ok(result);
         } else {
@@ -89,21 +90,94 @@ public class ProductController {
     // Hantera avsaknad av parametrar genom att returnera alla resultat.
     // Returnera en lista av DTO-objekt som matchar sökvillkoren.
     @GetMapping("/search_many")
-    public List<Product> searchMany(@RequestParam String name, @RequestParam int price, @RequestParam String status){
-        //UPDATE HERE
-        return service.searchByName(name);
-    }
+    public List<Product> searchMany(@RequestParam (required=false) String name, @RequestParam (required=false) Integer price, @RequestParam (required=false) String status){
+        List<Product> resultList = new ArrayList<>();
+        if (name != null && price != null && status != null) {
+            //MEST specifik - alla tre parametrar
+            resultList.addAll(service.searchByNameAndPriceAndStatus(name, price, status));
 
+        } else if (name != null && price != null) {
+            // Två parametrar: namn + pris
+            resultList.addAll(service.searchByNameAndPrice(name, price));
+
+        } else if (name != null && status != null) {
+            // Två parametrar: namn + status
+            resultList.addAll(service.searchByNameAndStatus(name, status));
+
+        } else if (price != null && status != null) {
+            // Två parametrar: pris + status
+            resultList.addAll(service.searchByPriceAndStatus(price, status));
+
+        } else if (name != null) {
+            // En parameter: namn
+            resultList.addAll(service.searchByName(name));
+
+        } else if (price != null) {
+            // En parameter: pris
+            resultList.addAll(service.searchByPrice(price));
+
+        } else if (status != null) {
+            // En parameter: status
+            resultList.addAll(service.searchByStatus(status));
+
+        } else {
+            //MINST specifik - inga parametrar (visa alla produkter)
+            resultList.addAll(service.getAll());
+        }
+        return resultList;
+    }
 
     //Uppgift 7: Kombinera PathVariable och RequestParam
     // Skapa en GET-endpoint där @PathVariable anger en kategori och @RequestParam filtrerar resultat inom kategorin.
     // Returnera en lista av DTO-objekt.
     // Returnera 400 vid ogiltiga parametrar.
+    @GetMapping("/category/{category}")
+    public ResponseEntity <List<Product>> getProductsByCategory(
+            @PathVariable String category,
+            @RequestParam(required = false) Integer maxPrice,
+            @RequestParam(required = false) String status
+            ){
+        List<Product> categoryList = service.searchByCategory(category);
+
+        if (categoryList.isEmpty()) {
+            return ResponseEntity.status(400).build();
+        }
+
+        if(maxPrice != null && status != null){
+            //find products in category matching price and status
+            categoryList = categoryList
+                    .stream()
+                    .filter(p -> p.getPrice() <= maxPrice)
+                    .filter(p -> p.getStatus()
+                            .toLowerCase()
+                            .contains(status.toLowerCase()))
+                    .toList();
+        } else if(maxPrice != null)
+        {
+            // find products in category matching price
+            categoryList = categoryList
+                    .stream()
+                    .filter(p -> p.getPrice() <= maxPrice)
+                .toList();
+        } else if(status != null) {
+            //find products in category matching status
+            categoryList = categoryList
+                    .stream()
+                    .filter(p -> p.getStatus()
+                            .toLowerCase()
+                            .contains(status.toLowerCase()))
+                    .toList();
+        }
+
+        return  ResponseEntity.ok(categoryList);
+    }
+
 
     //Uppgift 8: Anpassad ResponseEntity-hantering
     // Använd ResponseEntity i alla controller-metoder.
     // Sätt rätt HTTP-statuskod för varje typ av operation.
     // Inkludera eventuella headers (t.ex. Location vid skapande).
+
 
     // Returnera DTO-objekt i body.
     // Uppgift 9: Responsmodell med metadata

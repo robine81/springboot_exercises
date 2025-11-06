@@ -10,7 +10,7 @@ import java.time.LocalDate;
 public record ProductCreateDto(
         @NotBlank String name,
         @NotNull @PositiveOrZero double price,
-        @NotNull String status)
+        @NotNull String status,
        // @NotNull LocalDate createdDate
-       // @NotBlank String category
+        @NotBlank String category)
     {}

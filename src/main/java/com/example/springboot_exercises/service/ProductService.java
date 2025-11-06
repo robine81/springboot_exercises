@@ -19,6 +19,20 @@ public class ProductService {
 
     public List<Product> searchByName(String name) { return repo.findByName(name); }
 
+    public List<Product> searchByPrice(int price) { return repo.findByPrice(price); }
+
+    public List<Product> searchByStatus(String status) { return repo.findByStatus(status); }
+
+    public List<Product> searchByCategory(String category) { return repo.findByCategory(category); }
+
+    public List<Product> searchByNameAndPriceAndStatus(String name, int price, String status) { return repo.findByNameAndPriceAndStatus(name, price, status); }
+
+    public List<Product> searchByNameAndPrice(String name, int price) { return repo.findByNameAndPrice(name, price); }
+
+    public List<Product> searchByNameAndStatus(String name, String status) { return repo.findByNameAndStatus(name, status); }
+
+    public List<Product> searchByPriceAndStatus(int price, String status) { return repo.findByPriceAndStatus(price, status); }
+
     public Product addProduct(Product p) { return repo.save(p); }
 
     public boolean deleteById(int id) { return repo.deleteById(id); }

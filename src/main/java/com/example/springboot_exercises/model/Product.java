@@ -8,15 +8,15 @@ public class Product {
     private double price;
     private String status;
     //private LocalDate createdDate;
-    //private String category;
+    private String category;
 
-    public Product(int id, String name, double price, String status) {
+    public Product(int id, String name, double price, String status, String category) {
         this.id = id;
         this.name = name;
         this.price = price;
         this.status = status;
         //this.createdDate = createdDate;
-        //this.category = category;
+        this.category = category;
     }
 
     public int getId() {
@@ -55,13 +55,13 @@ public class Product {
     //    this.createdDate = createdDate;
     //}
 
-    //public String getCategory() {
-    //    return category;
-    //}
+    public String getCategory() {
+        return category;
+    }
 
-    //public void setCategory(String category) {
-    //    this.category = category;
-    //}
+    public void setCategory(String category) {
+        this.category = category;
+    }
 
     @Override
     public String toString() {
@@ -71,7 +71,7 @@ public class Product {
                 ", price=" + price +
                 ", status='" + status + '\'' +
                 //", createdDate=" + createdDate +
-                //", category='" + category + '\'' +
+                ", category='" + category + '\'' +
                 '}';
     }
 }
