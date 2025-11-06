@@ -1,6 +1,8 @@
 package com.example.springboot_exercises.service;
 
 import com.example.springboot_exercises.model.Product;
+import com.example.springboot_exercises.model.dto.ProductRequestDTO;
+import com.example.springboot_exercises.model.dto.ProductResponseDTO;
 import com.example.springboot_exercises.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 
@@ -33,22 +35,59 @@ public class ProductService {
 
     public List<Product> searchByPriceAndStatus(int price, String status) { return repo.findByPriceAndStatus(price, status); }
 
-    public Product addProduct(Product p) { return repo.save(p); }
+    public ProductResponseDTO addProduct(ProductRequestDTO p) { return toResponseDTO(repo.save(toEntity(p))); }
 
     public boolean deleteById(int id) { return repo.deleteById(id); }
 
-    public Product updateProduct(int id, Product product) {
+    public ProductResponseDTO updateProduct(int id, ProductRequestDTO productDTO) {
         Optional<Product> existing = repo.findById(id);
 
         if(existing.isPresent()){
-            Product p = existing.get();
-            p.setName(product.getName());
-            p.setPrice(product.getPrice());
-            p.setStatus(product.getStatus());
-            return p;
+            existing.get().setName(productDTO.getName());
+            existing.get().setPrice(productDTO.getPrice());
+            existing.get().setInternalStatus(productDTO.getInternalStatus());
+            return toResponseDTO(existing.get());
         }
         return null;
     }
 
+    public Product patchProduct(int id, Product product){
+        Optional<Product> existing = repo.findById(id);
+        if (existing.isPresent()){
+            if(product.getName() != null){
+
+            }
+            if(product.getPrice() != 0.0){
+
+            }
+            Product p = existing.get();
+            p.setName(product.getName());
+            p.setPrice(product.getPrice());
+            return  p;
+        }
+        return null;
+    }
+
+    private ProductResponseDTO toResponseDTO(Product product){
+        return new ProductResponseDTO(product.getId(), product.getName(), product.getPrice(), product.getCategory());
+    }
+
+    private Product toEntity(ProductRequestDTO request){
+        Product product = new Product();
+
+        if(!request.getName().isBlank()){
+            product.setName(request.getName());
+        }
+        if(request.getPrice() != 0.0){
+            product.setPrice(request.getPrice());
+        }
+        if(!request.getCategory().isBlank()){
+            product.setCategory(request.getCategory());
+        }
+        if(!request.getInternalStatus().isBlank()){
+            product.setInternalStatus(request.getInternalStatus());
+        }
+        return product;
+    }
 
 }

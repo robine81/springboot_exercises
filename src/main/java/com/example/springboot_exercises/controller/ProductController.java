@@ -1,7 +1,9 @@
 package com.example.springboot_exercises.controller;
 
 import com.example.springboot_exercises.model.Product;
-import com.example.springboot_exercises.model.ProductCreateDto;
+import com.example.springboot_exercises.model.dto.ProductCreateDto;
+import com.example.springboot_exercises.model.dto.ProductRequestDTO;
+import com.example.springboot_exercises.model.dto.ProductResponseDTO;
 import com.example.springboot_exercises.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -33,20 +35,9 @@ public class ProductController {
                 .orElse(ResponseEntity.status(404).build());
     }
 
-    //Uppgift 2: Filtrera resurser med RequestParam
-    // Skapa en GET-endpoint som returnerar en lista av objekt.
-    // Använd @RequestParam för att filtrera på ett eller flera fält.
-    // Parametrar ska vara valfria.
-    //Returnera en lista av DTO-objekt.
-    //localhost:8081/products/search?name=iphone
     @GetMapping("/search")
     public List<Product> search(@RequestParam String name) { return service.searchByName(name); }
 
-    //Uppgift 3: Skapa en resurs
-    // Skapa en POST-endpoint enligt REST-konventioner.
-    // Ta emot ett DTO-objekt som request body.
-    // Validera fälten med @Valid.
-    // Returnera det skapade objektet med statuskod 201.
     @PostMapping
     public ResponseEntity<Product> addProduct(@Valid @RequestBody ProductCreateDto productDto){
         Product result = new Product(-1, productDto.name(), productDto.price(), productDto.status(), productDto.category());
@@ -55,17 +46,10 @@ public class ProductController {
         return ResponseEntity.status(201).body(result);
     }
 
-    //Uppgift 4: Uppdatera en resurs
-    // Skapa en PUT-endpoint enligt REST-konventioner.
-    // Använd @PathVariable för att specificera id.
-    // Ta emot ett DTO-objekt med nya värden.
-    // Returnera uppdaterad responsmodell.
-    // Hantera fall där id inte finns (404).
-    //http://localhost:8081/products/3?name=Huawei&price=170.0
     @PutMapping("/{id}")
-    public ResponseEntity<Product> updateProduct(@PathVariable int id, @RequestParam String name, @RequestParam double price, @RequestParam String status, @RequestParam String category){
+    public ResponseEntity<ProductResponseDTO> updateProduct(@PathVariable int id, @RequestBody ProductRequestDTO productDTO){
         //id -1 will be overwritten in service.updateProduct with findById(id), -1 is just a placeholder to create object
-        Product result = service.updateProduct(id, new Product (-1, name, price, status, category));
+        ProductResponseDTO result = service.updateProduct(id, productDTO);
         if(result != null){
             return ResponseEntity.ok(result);
         } else {
@@ -73,22 +57,12 @@ public class ProductController {
         }
     }
 
-    //Uppgift 5: Ta bort en resurs
-    // Skapa en DELETE-endpoint enligt REST-konventioner.
-    // Använd @PathVariable för att identifiera objektet.
-    // Returnera 204 vid lyckad borttagning.
-    // Returnera 404 om objektet inte hittas.
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable int id){
         boolean removed = service.deleteById(id);
         return removed ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
     }
 
-    //Uppgift 6: Sökning med flera RequestParam
-    //Skapa en GET-endpoint som tillåter sökning baserat på flera filter via @RequestParam.
-    // Parametrar kan kombineras (t.ex. namn, datumintervall, status).
-    // Hantera avsaknad av parametrar genom att returnera alla resultat.
-    // Returnera en lista av DTO-objekt som matchar sökvillkoren.
     @GetMapping("/search_many")
     public List<Product> searchMany(@RequestParam (required=false) String name, @RequestParam (required=false) Integer price, @RequestParam (required=false) String status){
         List<Product> resultList = new ArrayList<>();
@@ -127,10 +101,6 @@ public class ProductController {
         return resultList;
     }
 
-    //Uppgift 7: Kombinera PathVariable och RequestParam
-    // Skapa en GET-endpoint där @PathVariable anger en kategori och @RequestParam filtrerar resultat inom kategorin.
-    // Returnera en lista av DTO-objekt.
-    // Returnera 400 vid ogiltiga parametrar.
     @GetMapping("/category/{category}")
     public ResponseEntity <List<Product>> getProductsByCategory(
             @PathVariable String category,
@@ -148,7 +118,7 @@ public class ProductController {
             categoryList = categoryList
                     .stream()
                     .filter(p -> p.getPrice() <= maxPrice)
-                    .filter(p -> p.getStatus()
+                    .filter(p -> p.getInternalStatus()
                             .toLowerCase()
                             .contains(status.toLowerCase()))
                     .toList();
@@ -163,7 +133,7 @@ public class ProductController {
             //find products in category matching status
             categoryList = categoryList
                     .stream()
-                    .filter(p -> p.getStatus()
+                    .filter(p -> p.getInternalStatus()
                             .toLowerCase()
                             .contains(status.toLowerCase()))
                     .toList();
@@ -172,16 +142,51 @@ public class ProductController {
         return  ResponseEntity.ok(categoryList);
     }
 
+    //Uppgift 1: DTO från Query-parametrar
+    // Skapa en GET-endpoint som tar emot flera @RequestParam (t.ex. namn, kategori, minpris, maxpris).
+    // Returnera DTO:n som JSON-respons.
+    // Hantera saknade parametrar med required = false där det är lämpligt.
+    @GetMapping("/create-dto")
+    public ResponseEntity<ProductResponseDTO> createDto(
+            @RequestParam String name,
+            @RequestParam double price,
+            @RequestParam (required = false) String category)
+    {
+        ProductRequestDTO productDTO = new ProductRequestDTO();
+        productDTO.setName(name);
+        productDTO.setPrice(price);
+        if(category != null)
+        {
+            productDTO.setCategory(category);
+        }
 
-    //Uppgift 8: Anpassad ResponseEntity-hantering
-    // Använd ResponseEntity i alla controller-metoder.
-    // Sätt rätt HTTP-statuskod för varje typ av operation.
-    // Inkludera eventuella headers (t.ex. Location vid skapande).
+        //TESTA HÄRIFRÅN!!!
+        ProductResponseDTO result = service.addProduct(productDTO);
+        return ResponseEntity.ok(result);
+    }
 
+    //Uppgift 2: DTO från PathVariable och RequestParam
+    // Skapa en GET-endpoint där @PathVariable används för ett id och @RequestParam används för filtrerings- eller sorteringsinformation.
+    // Bygg en DTO som kombinerar båda typerna av data.
+    // Returnera DTO:n i svaret som JSON.
+    // Använd en rimlig defaultValue för @RequestParam om inget värde skickas.
 
-    // Returnera DTO-objekt i body.
-    // Uppgift 9: Responsmodell med metadata
-    // Skapa en responsmodell som innehåller data, timestamp och requestId. ● Alla endpoints ska returnera denna struktur.
-    // timestamp sätts automatiskt vid varje svar.
-    // requestId genereras unikt per anrop.
+    // Uppgift 3: Konvertering mellan entitet och DTO
+    // Skapa en enkel User-entitet med fält som id, email, och role.
+    // Skapa motsvarande UserDto för dataöverföring till klienten.
+    // Implementera en mapper-klass som konverterar mellan entitet och DTO.
+    // Använd en serviceklass som returnerar UserDto via controllern.
+
+    //Uppgift 4: Enkel manuell validering av DTO-data
+    // Skapa en GET-endpoint som tar emot parametrar för email och age.
+    // Kontrollera manuellt i controllern att email innehåller @ och att age är mellan 18–99.
+    // Returnera ett textmeddelande som indikerar om datan är giltig eller inte.
+    // Skapa en enkel DTO för att hålla värdena
+
+    //Uppgift 5: DTO i ResponseEntity Krav:
+    // Skapa en GET-endpoint som returnerar en ResponseEntity<SimpleResponseDto>.
+    // DTO:n ska innehålla fält som message, timestamp och success.
+        // Returnera statuskod 200 OK vid lyckad operation, och 400 BAD_REQUEST vid misslyckad.
+        // Sätt timestamp till aktuell tid och anpassa meddelandet beroende på resultatet.
+
 }
