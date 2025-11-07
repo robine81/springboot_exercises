@@ -1,9 +1,10 @@
 package com.example.springboot_exercises.controller;
 
 import com.example.springboot_exercises.model.Product;
-import com.example.springboot_exercises.model.dto.ProductCreateDto;
 import com.example.springboot_exercises.model.dto.ProductRequestDTO;
 import com.example.springboot_exercises.model.dto.ProductResponseDTO;
+import com.example.springboot_exercises.model.dto.ProductResponseDTOAdmin;
+import com.example.springboot_exercises.model.dto.UserValidationDTO;
 import com.example.springboot_exercises.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,10 @@ public class ProductController {
     public ProductController(ProductService service) { this.service = service; }
 
     @GetMapping
-    public List<Product> getAll(){ return service.getAll(); }
+    public ResponseEntity<List<ProductResponseDTO>> getAll(){ return ResponseEntity.ok(service.getAll()); }
+
+    @GetMapping("/admin")
+    public ResponseEntity<List<ProductResponseDTOAdmin>> getAllAdmin(){ return ResponseEntity.ok(service.getAllAdmin()); }
 
     //Uppgift 1 REST-api: Hämta en resurs med PathVariable
     // Skapa en GET-endpoint enligt REST-konventioner.
@@ -36,14 +40,13 @@ public class ProductController {
     }
 
     @GetMapping("/search")
-    public List<Product> search(@RequestParam String name) { return service.searchByName(name); }
+    public List<ProductResponseDTO> search(@RequestParam String name) { return service.searchByName(name); }
 
+    //localhost:8081/products/
     @PostMapping
-    public ResponseEntity<Product> addProduct(@Valid @RequestBody ProductCreateDto productDto){
-        Product result = new Product(-1, productDto.name(), productDto.price(), productDto.status(), productDto.category());
-        result = service.addProduct(result);
-        //validation not working
-        return ResponseEntity.status(201).body(result);
+    public ResponseEntity<ProductResponseDTO> addProduct(@RequestBody ProductRequestDTO productReqDTO){
+        ProductResponseDTO producResDTO = service.addProduct(productReqDTO);
+        return ResponseEntity.status(201).body(producResDTO);
     }
 
     @PutMapping("/{id}")
@@ -64,23 +67,11 @@ public class ProductController {
     }
 
     @GetMapping("/search_many")
-    public List<Product> searchMany(@RequestParam (required=false) String name, @RequestParam (required=false) Integer price, @RequestParam (required=false) String status){
-        List<Product> resultList = new ArrayList<>();
-        if (name != null && price != null && status != null) {
-            //MEST specifik - alla tre parametrar
-            resultList.addAll(service.searchByNameAndPriceAndStatus(name, price, status));
-
-        } else if (name != null && price != null) {
+    public ResponseEntity<List<ProductResponseDTO>> searchMany(@RequestParam (required=false) String name, @RequestParam (required=false) Integer price){
+        List<ProductResponseDTO> resultList = new ArrayList<>();
+        if (name != null && price != null) {
             // Två parametrar: namn + pris
             resultList.addAll(service.searchByNameAndPrice(name, price));
-
-        } else if (name != null && status != null) {
-            // Två parametrar: namn + status
-            resultList.addAll(service.searchByNameAndStatus(name, status));
-
-        } else if (price != null && status != null) {
-            // Två parametrar: pris + status
-            resultList.addAll(service.searchByPriceAndStatus(price, status));
 
         } else if (name != null) {
             // En parameter: namn
@@ -90,24 +81,20 @@ public class ProductController {
             // En parameter: pris
             resultList.addAll(service.searchByPrice(price));
 
-        } else if (status != null) {
-            // En parameter: status
-            resultList.addAll(service.searchByStatus(status));
-
-        } else {
+        }else {
             //MINST specifik - inga parametrar (visa alla produkter)
             resultList.addAll(service.getAll());
         }
-        return resultList;
+        return ResponseEntity.ok(resultList);
     }
 
     @GetMapping("/category/{category}")
-    public ResponseEntity <List<Product>> getProductsByCategory(
+    public ResponseEntity <List<ProductResponseDTO>> getProductsByCategory(
             @PathVariable String category,
             @RequestParam(required = false) Integer maxPrice,
             @RequestParam(required = false) String status
             ){
-        List<Product> categoryList = service.searchByCategory(category);
+        List<ProductResponseDTO> categoryList = service.searchByCategory(category);
 
         if (categoryList.isEmpty()) {
             return ResponseEntity.status(400).build();
@@ -118,9 +105,6 @@ public class ProductController {
             categoryList = categoryList
                     .stream()
                     .filter(p -> p.getPrice() <= maxPrice)
-                    .filter(p -> p.getInternalStatus()
-                            .toLowerCase()
-                            .contains(status.toLowerCase()))
                     .toList();
         } else if(maxPrice != null)
         {
@@ -133,9 +117,6 @@ public class ProductController {
             //find products in category matching status
             categoryList = categoryList
                     .stream()
-                    .filter(p -> p.getInternalStatus()
-                            .toLowerCase()
-                            .contains(status.toLowerCase()))
                     .toList();
         }
 
@@ -143,28 +124,9 @@ public class ProductController {
     }
 
     //Uppgift 1: DTO från Query-parametrar
-    // Skapa en GET-endpoint som tar emot flera @RequestParam (t.ex. namn, kategori, minpris, maxpris).
+    // Skapa en GET-endpoint som tar emot flera @RequestParam (t.ex. Namn, kategori, minpris, maxpris).
     // Returnera DTO:n som JSON-respons.
     // Hantera saknade parametrar med required = false där det är lämpligt.
-    @GetMapping("/create-dto")
-    public ResponseEntity<ProductResponseDTO> createDto(
-            @RequestParam String name,
-            @RequestParam double price,
-            @RequestParam (required = false) String category)
-    {
-        ProductRequestDTO productDTO = new ProductRequestDTO();
-        productDTO.setName(name);
-        productDTO.setPrice(price);
-        if(category != null)
-        {
-            productDTO.setCategory(category);
-        }
-
-        //TESTA HÄRIFRÅN!!!
-        ProductResponseDTO result = service.addProduct(productDTO);
-        return ResponseEntity.ok(result);
-    }
-
     //Uppgift 2: DTO från PathVariable och RequestParam
     // Skapa en GET-endpoint där @PathVariable används för ett id och @RequestParam används för filtrerings- eller sorteringsinformation.
     // Bygg en DTO som kombinerar båda typerna av data.
@@ -177,11 +139,39 @@ public class ProductController {
     // Implementera en mapper-klass som konverterar mellan entitet och DTO.
     // Använd en serviceklass som returnerar UserDto via controllern.
 
+    @GetMapping("/create-dto")
+    public ResponseEntity<ProductResponseDTO> createDto(
+            @RequestParam String name,
+            @RequestParam double price,
+            @RequestParam (required = false) String category)
+    {
+        ProductRequestDTO productReqDTO = new ProductRequestDTO();
+        productReqDTO.setName(name);
+        productReqDTO.setPrice(price);
+        if(category != null)
+        {
+            productReqDTO.setCategory(category);
+        }
+
+        ProductResponseDTO result = service.addProduct(productReqDTO);
+        return ResponseEntity.ok(result);
+    }
+
     //Uppgift 4: Enkel manuell validering av DTO-data
     // Skapa en GET-endpoint som tar emot parametrar för email och age.
     // Kontrollera manuellt i controllern att email innehåller @ och att age är mellan 18–99.
     // Returnera ett textmeddelande som indikerar om datan är giltig eller inte.
     // Skapa en enkel DTO för att hålla värdena
+
+
+    //TESTA HÄR!!!
+    @GetMapping("/validate-user")
+    public ResponseEntity<String> validateUser(
+            @Valid @RequestParam @RequestBody UserValidationDTO dto){
+       return ResponseEntity.ok("Data is valid! Email: " + dto.getEmail() + " and age: " + dto.getAge());
+
+    }
+
 
     //Uppgift 5: DTO i ResponseEntity Krav:
     // Skapa en GET-endpoint som returnerar en ResponseEntity<SimpleResponseDto>.

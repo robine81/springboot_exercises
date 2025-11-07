@@ -40,7 +40,7 @@ public class ProductRepository {
                         .toLowerCase()
                         .contains(name.toLowerCase()))
                 .filter(p -> p.getPrice() <= maxPrice)
-                .filter(p -> p.getStatus()
+                .filter(p -> p.getInternalStatus()
                         .toLowerCase()
                         .contains(status.toLowerCase()))
                 .toList();
@@ -60,7 +60,7 @@ public class ProductRepository {
                 .filter(p -> p.getName()
                         .toLowerCase()
                         .contains(name.toLowerCase()))
-                .filter(p -> p.getStatus()
+                .filter(p -> p.getInternalStatus()
                         .toLowerCase()
                         .contains(status.toLowerCase()))
                 .toList();
@@ -69,7 +69,7 @@ public class ProductRepository {
     public List<Product> findByPriceAndStatus(int maxPrice, String status){
         return products.stream()
                 .filter(p -> p.getPrice() <= maxPrice)
-                .filter(p -> p.getStatus()
+                .filter(p -> p.getInternalStatus()
                         .toLowerCase()
                         .contains(status.toLowerCase()))
                 .toList();
@@ -91,7 +91,7 @@ public class ProductRepository {
 
     public List<Product> findByStatus(String status){
         return products.stream()
-                .filter(p -> p.getStatus()
+                .filter(p -> p.getInternalStatus()
                         .toLowerCase()
                         .contains(status.toLowerCase()))
                 .toList();
